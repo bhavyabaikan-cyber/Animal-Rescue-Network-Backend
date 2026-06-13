@@ -24,14 +24,14 @@ const app = exp();
 // Force redeploy - CORS fix for Vercel frontend
 // ✅ Middleware
 app.use(cors({
-  origin: [
-    'https://animal-rescue-network-frontend.vercel.app',
-    'https://animal-rescue-network-frontend-hl13ernf1-bhavya-baikan.vercel.app',
-    'https://animal-rescue-network-frontend-iyecj6p3s-bhavya-baikan.vercel.app',
-    'http://localhost:5173',
-    'http://localhost:12000'
-  ],
-  credentials: true,
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+    
+    // Allow all origins
+    return callback(null, true);
+  },
+  credentials: false, // Set to false since we're using JWT tokens
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
