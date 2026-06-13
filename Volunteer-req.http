@@ -1,0 +1,51 @@
+### Register Volunteer
+POST http://localhost:12000/auth/users
+Content-Type: application/json
+
+{
+  "firstName": "Priya",
+  "lastName": "Sharma",
+  "email": "volunteer1@mail.com",
+  "role": "VOLUNTEER",
+  "password": "volunteer123",
+  "profileImageUrl": "https://example.com/avatars/volunteer.png"
+}
+
+### Volunteer Login
+POST http://localhost:12000/auth/login
+Content-Type: application/json
+
+{
+  "email": "volunteer1@mail.com",
+  "password": "volunteer123"
+}
+
+### Volunteer Logout
+GET http://localhost:12000/user-api/logout
+
+### View All Pending Cases
+GET http://localhost:12000/volunteer-api/pending
+Authorization: Bearer 6a0807b63f1df1a92b5eaefb
+
+### Accept Rescue Case
+PUT http://localhost:12000/volunteer-api/accept/6a0805503f1df1a92b5eaee0
+Authorization: Bearer 6a0805503f1df1a92b5eaee0
+
+### Update Rescue Status
+PUT http://localhost:12000/volunteer-api/update-status/6a0805503f1df1a92b5eaee0
+Content-Type: application/json
+Authorization: Bearer 6a0805503f1df1a92b5eaee0
+
+{
+  "status": "In Transit",
+  "urgency": false
+}
+
+### Change Password
+PUT http://localhost:12000/user-api/password
+Content-Type: application/json
+
+{
+  "currentPassword": "volunteer123",
+  "newPassword": "newVolPass789"
+}

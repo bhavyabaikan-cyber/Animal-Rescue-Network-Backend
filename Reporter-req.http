@@ -1,0 +1,61 @@
+POST http://localhost:12000/auth/users
+Content-Type: application/json
+
+{
+  "firstName": "Ravi",
+  "lastName": "Kumar",
+  "email": "reporter1@mail.com",
+  "role": "REPORTER",
+  "password": "reporter123",
+  "profileImageUrl": "https://example.com/avatar.png"
+}
+
+### Reporter Login
+POST http://localhost:12000/auth/login 
+Content-Type: application/json
+
+{
+  "email": "reporter1@mail.com",
+  "password": "reporter123"
+}
+
+### Reporter Logout
+GET http://localhost:12000/auth/logout
+
+### Report New Animal
+POST http://localhost:12000/reporter-api/report
+Content-Type: application/json
+Authorization: Bearer 6a072cb05ed77d6f5a72c45c
+
+{
+  "name": "Bella",
+  "species": "Dog",
+  "location": "Central Park, NYC",
+  "contactNumber": "+1-555-0198",
+  "description": "Injured hind leg, limping near fountain",
+  "imageUrl": "https://example.com/bella.jpg",
+  "urgency": true
+}
+
+### View My Reports
+GET http://localhost:12000/reporter-api/my-reports
+Authorization: Bearer 6a072cb05ed77d6f5a72c45c
+
+### Update Own Report (Only if Pending)
+PUT http://localhost:12000/reporter-api/report/6a0805503f1df1a92b5eaee0
+Content-Type: application/json
+Authorization: Bearer 6a072cb05ed77d6f5a72c45c
+
+{
+  "contactNumber": "+1-555-0199",
+  "description": "Updated: Still at location, condition worsening"
+}
+
+### Change Password
+PUT http://localhost:12000/auth/password
+Content-Type: application/json
+
+{
+  "currentPassword": "reporter123",
+  "newPassword": "newPass456"
+}

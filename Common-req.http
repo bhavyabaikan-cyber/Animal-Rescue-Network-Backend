@@ -1,0 +1,11 @@
+### Get All Animals (Public)
+GET http://localhost:12000/common-api/animals
+
+### Get Single Animal Details
+GET http://localhost:12000/common-api/animals/6a0805503f1df1a92b5eaee0
+
+### Filter by Status (Optional Query)
+GET http://localhost:12000/common-api/animals?status=Pending
+
+### Filter by Species
+GET http://localhost:12000/common-api/animals?species=Dog

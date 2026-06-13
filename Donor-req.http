@@ -1,0 +1,32 @@
+### Register Donor
+POST http://localhost:12000/auth/users
+Content-Type: application/json
+
+{
+  "firstName": "Alex",
+  "lastName": "Patel",
+  "email": "donor1@mail.com",
+  "role": "DONOR",
+  "password": "donor123"
+}
+
+### Login Donor
+POST http://localhost:12000/auth/login
+Content-Type: application/json
+
+{ "email": "donor1@mail.com", "password": "donor123" }
+
+### View Cases Needing Support
+GET http://localhost:12000/donor-api/cases
+Authorization: Bearer 6a080e341eb66ab002de721c
+
+### Pledge to a Case
+POST http://localhost:12000/donor-api/pledge/6a0805503f1df1a92b5eaee0
+Content-Type: application/json
+Authorization: Bearer 6a080e341eb66ab002de721c
+
+{ "amount": 50, "message": "For vet checkup" }
+
+### View My Pledges
+GET http://localhost:12000/donor-api/my-pledges
+Authorization: Bearer YOUR_DONOR_TOKEN
