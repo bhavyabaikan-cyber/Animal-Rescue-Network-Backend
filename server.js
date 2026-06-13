@@ -21,6 +21,7 @@ import { analyticsApp } from "./APIs/AnalyticsAPI.js";
 dotenv.config();
 const app = exp();
 
+// Force redeploy - CORS fix for Vercel frontend
 // ✅ Middleware
 app.use(cors({ origin:[ 'http://localhost:5173',
     'http://localhost:12000',
