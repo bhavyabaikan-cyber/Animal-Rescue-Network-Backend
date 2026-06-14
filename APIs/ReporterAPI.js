@@ -33,14 +33,26 @@ reporterApp.post("/report", verifyToken("REPORTER"), upload.single("image"), asy
       return res.status(400).json({ message: "Address is required" });
     }
 
+        // ✅ Declare backendUrl BEFORE the object
+    const backendUrl = process.env.BACKEND_URL || "http://localhost:12000";
+
     const newAnimal = {
       name: name?.trim() || "Unnamed",
       species: species.trim(),
       breed: breed?.trim() || "",
       description: description.trim(),
-      caseType: caseType || "Stray", // ✅ NEW: Case type (Stray or Lost)
+      caseType: caseType || "Stray",
       urgency: urgency === "true" || urgency === true || urgency === "on",
-      imageUrl: req.file ? `http://localhost:12000/uploads/${req.file.filename}` : null,
+      imageUrl: req.file ? `${backendUrl}/uploads/${req.file.filename}` : null,  // ✅ Now it works
+    // const newAnimal = {
+    //   name: name?.trim() || "Unnamed",
+    //   species: species.trim(),
+    //   breed: breed?.trim() || "",
+    //   description: description.trim(),
+    //   caseType: caseType || "Stray", // ✅ NEW: Case type (Stray or Lost)
+    //   urgency: urgency === "true" || urgency === true || urgency === "on",
+    //  const backendUrl = process.env.BACKEND_URL || "http://localhost:12000";
+    // imageUrl: req.file ? `${backendUrl}/uploads/${req.file.filename}` : null,
       location: {
         address: finalAddress.trim(),
         coordinates: latitude && longitude 
