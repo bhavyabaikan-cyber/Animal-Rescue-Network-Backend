@@ -88,8 +88,7 @@ userApp.put("/profile", verifyToken(), upload.single("profileImage"), async (req
     if (lastName) updateData.lastName = lastName;
     if (email) updateData.email = email;
     if (req.file) {
-      updateData.profileImageUrl = `http://localhost:12000/uploads/profiles/${req.file.filename}`;
-    }
+updateData.profileImageUrl = `${process.env.BACKEND_URL || "http://localhost:12000"}/uploads/profiles/${req.file.filename}`;    }
     
     await getUsers().updateOne(
       { _id: new mongoose.Types.ObjectId(req.user.id) },

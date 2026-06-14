@@ -61,7 +61,7 @@ commentApp.post("/animal/:animalId", verifyToken(), upload.single("image"), asyn
       animalId: new mongoose.Types.ObjectId(animalId),
       userId: new mongoose.Types.ObjectId(req.user.id),
       text: text.trim(),
-      imageUrl: req.file ? `http://localhost:12000/uploads/comments/${req.file.filename}` : null,
+     imageUrl: req.file ? `${process.env.BACKEND_URL || "http://localhost:12000"}/uploads/comments/${req.file.filename}` : null,
       likedBy: [],
       createdAt: new Date(),
       updatedAt: new Date()

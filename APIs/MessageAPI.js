@@ -177,8 +177,7 @@ messageApp.post("/conversations/:id/messages", verifyToken(), upload.single("ima
       _id: new mongoose.Types.ObjectId(),
       sender: userId,
       text: text || "",
-      imageUrl: req.file ? `http://localhost:12000/uploads/messages/${req.file.filename}` : null,
-      createdAt: new Date(),
+imageUrl: req.file ? `${process.env.BACKEND_URL || "http://localhost:12000"}/uploads/messages/${req.file.filename}` : null,      createdAt: new Date(),
       readBy: [userId]
     };
 

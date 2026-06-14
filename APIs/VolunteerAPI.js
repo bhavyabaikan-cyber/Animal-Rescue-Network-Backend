@@ -77,7 +77,12 @@ volunteerApp.put("/update-status/:id", verifyToken("VOLUNTEER"), upload.single("
     
     const updateData = { status, updatedAt: new Date() };
     if (description) updateData.description = description;
-    if (req.file) updateData.imageUrl = `http://localhost:12000/uploads/${req.file.filename}`;
+    
+    // ✅ FIXED: Use environment variable for image URL
+    if (req.file) {
+      const backendUrl = process.env.BACKEND_URL || "http://localhost:12000";
+      updateData.imageUrl = `${backendUrl}/uploads/${req.file.filename}`;
+    }
 
     await getAnimals().updateOne(
       { _id: new mongoose.Types.ObjectId(id) },
@@ -93,8 +98,10 @@ volunteerApp.post("/receipts/:id", verifyToken("VOLUNTEER"), upload.array("recei
     const { id } = req.params;
     const { titles } = req.body;
     
+    // ✅ FIXED: Use environment variable for image URL
+    const backendUrl = process.env.BACKEND_URL || "http://localhost:12000";
     const receiptData = (req.files || []).map((file, index) => ({
-      url: `http://localhost:12000/uploads/${file.filename}`,
+      url: `${backendUrl}/uploads/${file.filename}`,
       title: Array.isArray(titles) ? titles[index] : (titles || `Receipt ${index + 1}`),
       uploadedAt: new Date()
     }));
