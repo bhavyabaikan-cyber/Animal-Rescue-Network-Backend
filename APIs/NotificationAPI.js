@@ -90,17 +90,44 @@ notificationApp.delete("/", verifyToken(), async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// ✅ GET unread count
+// // ✅ GET unread count
+// notificationApp.get("/unread-count", verifyToken(), async (req, res, next) => {
+//   try {
+//     const count = await getNotifications().countDocuments({ 
+//       userId: new mongoose.Types.ObjectId(req.user.id), 
+//       read: false 
+//     });
+//     res.status(200).json({ message: "Unread count fetched", payload: { count } });
+//   } catch (err) { 
+//     console.error("Unread count error:", err);
+//     next(err); 
+//   }
+// });
+
+// GET - Get unread notification count
 notificationApp.get("/unread-count", verifyToken(), async (req, res, next) => {
   try {
-    const count = await getNotifications().countDocuments({ 
-      userId: new mongoose.Types.ObjectId(req.user.id), 
-      read: false 
+    // Assuming your model is NotificationModel and has 'userId' and 'isRead' fields
+    const count = await NotificationModel.countDocuments({ 
+      userId: req.user.id, 
+      isRead: false 
     });
-    res.status(200).json({ message: "Unread count fetched", payload: { count } });
-  } catch (err) { 
-    console.error("Unread count error:", err);
-    next(err); 
+    res.status(200).json({ message: "Unread count fetched", payload: count });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST - Mark all notifications as read (to clear the badge)
+notificationApp.post("/mark-all-read", verifyToken(), async (req, res, next) => {
+  try {
+    await NotificationModel.updateMany(
+      { userId: req.user.id, isRead: false },
+      { $set: { isRead: true } }
+    );
+    res.status(200).json({ message: "All notifications marked as read" });
+  } catch (err) {
+    next(err);
   }
 });
 
