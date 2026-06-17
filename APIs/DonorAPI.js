@@ -184,13 +184,13 @@ donorApp.post("/donate/:animalId", verifyToken(), async (req, res, next) => {
       date: new Date()
     };
     
-    await animals.updateOne(
-      { _id: new mongoose.Types.ObjectId(animalId) },
-      {
-        $push: { donations: donation },
-         $inc: { totalPledged: parseFloat(amount) }
-        }
-    );
+   await animals.updateOne(
+  { _id: new mongoose.Types.ObjectId(animalId) },
+  {
+    $push: { donations: donation },
+    $inc: { totalPledged: parseFloat(amount) }
+  }
+);
     
     // Notify the reporter and volunteer
     const notifications = mongoose.connection.db.collection("notifications");
@@ -211,18 +211,18 @@ donorApp.post("/donate/:animalId", verifyToken(), async (req, res, next) => {
       });
     }
     
-    // Notify volunteer
-    if (animal.assignedVolunteer) {
-      await notifications.insertOne({
-        userId: new mongoose.Types.ObjectId(animal.assignedVolunteer.toString()),
-        type: "donation",
-        title: "New Donation Received! 💰",
-        message: `${donorName} donated ₹${amount} to the case you're handling: ${animal.name || "the animal"}.`,
-        link: `/case/${animalId}`,
-        read: false,
-        createdAt: new Date()
-      });
-    }
+   // Notify volunteer
+if (animal.assignedVolunteer) {
+  await notifications.insertOne({
+    userId: new mongoose.Types.ObjectId(animal.assignedVolunteer.toString()),
+    type: "donation",
+    title: "New Donation Received! 💰",
+    message: `${donorName} donated ₹${amount} to the case you're handling: ${animal.name || "the animal"}.`,
+    link: `/case/${animalId}`,
+    read: false,
+    createdAt: new Date()
+  });
+ }
     
     console.log("✅ [DONATION] Successfully processed\n");
     
