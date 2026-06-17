@@ -188,8 +188,8 @@ donorApp.post("/donate/:animalId", verifyToken(), async (req, res, next) => {
       { _id: new mongoose.Types.ObjectId(animalId) },
       {
         $push: { donations: donation },
-        $inc: { totalPledged: parseFloat(amount) }
-      }
+         $inc: { totalPledged: parseFloat(amount) }
+        }
     );
     
     // Notify the reporter and volunteer
