@@ -21,10 +21,8 @@ const AnimalSchema = new Schema({
   reportedBy: { type: Types.ObjectId, ref: "user", required: true },
   name: { type: String, default: "Unnamed" },
   species: { type: String, required: true },
-  
-  // ✅ THIS IS THE MAGIC FIX: Mixed accepts strings OR objects
+  breed: { type: String, default: "" },  // ✅ NEW: Added breed field
   location: { type: Schema.Types.Mixed, default: "Unknown Location" },
-  
   contactNumber: { type: String, required: true },
   description: { type: String, required: true },
   imageUrl: { type: String, default: "" },
@@ -37,7 +35,7 @@ const AnimalSchema = new Schema({
   visibility: { type: String, enum: ["private", "public"], default: "public" },
   receipts: { type: [receiptSchema], default: [] },
   adoption: { type: Schema.Types.Mixed, default: {} }
-}, { timestamps: true, versionKey: false, strict: false }); // strict: false is critical
+}, { timestamps: true, versionKey: false, strict: false });
 
 // Geospatial index (won't break on strings)
 AnimalSchema.index({ "location.coordinates": "2dsphere" });
