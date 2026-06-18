@@ -221,3 +221,87 @@ userApp.get("/badges", verifyToken(), async (req, res, next) => {
     next(err);
   }
 });
+
+// ✅ GET user points
+userApp.get("/points", verifyToken(), async (req, res, next) => {
+  try {
+    const userId = new mongoose.Types.ObjectId(req.user.id);
+    const user = await getUsers().findOne({ _id: userId });
+    const animals = mongoose.connection.db.collection("animals");
+    
+    let points = 0;
+    const breakdown = [];
+
+    // 1. Base points for joining
+    points += 10;
+    breakdown.push({ action: "Joined the community", points: 10 });
+
+    // 2. Reporter points
+    if (user.role === 'REPORTER') {
+      const reported = await animals.find({ reportedBy: userId }).toArray();
+      const reportPoints = reported.length * 20;
+      points += reportPoints;
+      if (reported.length > 0) breakdown.push({ action: `Reported ${reported.length} animal(s)`, points: reportPoints });
+      
+      const rescued = reported.filter(a => a.status === 'Rescued' || a.status === 'Adopted');
+      const rescuePoints = rescued.length * 50;
+      points += rescuePoints;
+      if (rescued.length > 0) breakdown.push({ action: `${rescued.length} animal(s) rescued`, points: rescuePoints });
+    }
+
+    // 3. Volunteer points
+    if (user.role === 'VOLUNTEER') {
+      const assigned = await animals.find({ assignedVolunteer: userId }).toArray();
+      const casePoints = assigned.length * 30;
+      points += casePoints;
+      if (assigned.length > 0) breakdown.push({ action: `Handled ${assigned.length} case(s)`, points: casePoints });
+      
+      const adopted = assigned.filter(a => a.status === 'Adopted');
+      const adoptionPoints = adopted.length * 100;
+      points += adoptionPoints;
+      if (adopted.length > 0) breakdown.push({ action: `${adopted.length} successful adoption(s)`, points: adoptionPoints });
+    }
+
+    // 4. Donor points
+    if (user.role === 'DONOR') {
+      const donatedCases = await animals.find({ "donations.donor": userId }).toArray();
+      let totalDonated = 0;
+      donatedCases.forEach(a => {
+        a.donations.filter(d => d.donor.toString() === userId.toString()).forEach(d => totalDonated += Number(d.amount) || 0);
+      });
+      
+      const donationPoints = Math.floor(totalDonated / 10); // 1 point per ₹10
+      points += donationPoints;
+      if (totalDonated > 0) breakdown.push({ action: `Donated ₹${totalDonated}`, points: donationPoints });
+    }
+
+    // 5. Adopter points
+    if (user.role === 'ADOPTER') {
+      const adopted = await animals.find({ 'adoption.applicant': userId, status: 'Adopted' }).toArray();
+      const adoptionPoints = adopted.length * 200;
+      points += adoptionPoints;
+      if (adopted.length > 0) breakdown.push({ action: `Adopted ${adopted.length} animal(s)`, points: adoptionPoints });
+    }
+
+    res.status(200).json({ 
+      message: "Points fetched", 
+      payload: { 
+        totalPoints: points, 
+        breakdown,
+        level: getLevel(points)
+      } 
+    });
+  } catch (err) {
+    console.error("Points error:", err);
+    next(err);
+  }
+});
+
+// Helper function to determine level
+function getLevel(points) {
+  if (points >= 1000) return { name: "Legend", color: "#FFD700", icon: "👑" };
+  if (points >= 500) return { name: "Hero", color: "#9333EA", icon: "🦸" };
+  if (points >= 200) return { name: "Champion", color: "#3B82F6", icon: "🏆" };
+  if (points >= 100) return { name: "Supporter", color: "#10B981", icon: "💚" };
+  return { name: "Newcomer", color: "#6B7280", icon: "🌟" };
+}
