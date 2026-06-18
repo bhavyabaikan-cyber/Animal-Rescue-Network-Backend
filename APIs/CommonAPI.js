@@ -181,3 +181,26 @@ commonApp.get("/animals/:id", verifyToken(), async (req, res, next) => {
     next(err); 
   }
 });
+
+// ✅ POST - Record help actions (share, like, etc.)
+commonApp.post("/help-action", verifyToken(), async (req, res) => {
+  try {
+    const { animalId, actionType } = req.body;
+    const userId = req.user.id;
+
+    if (!animalId || !actionType) {
+      return res.status(400).json({ message: "Animal ID and action type are required" });
+    }
+
+    // For now, just log the action (you can expand this later to track shares, likes, etc.)
+    console.log(`📢 [HELP ACTION] User ${userId} performed "${actionType}" on animal ${animalId}`);
+
+    res.status(200).json({ 
+      message: `${actionType} recorded successfully`,
+      payload: { animalId, actionType, userId }
+    });
+  } catch (err) {
+    console.error("Help action error:", err);
+    res.status(500).json({ message: "Error recording action", error: err.message });
+  }
+});
