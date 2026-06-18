@@ -111,27 +111,29 @@ commonApp.get("/animals", async (req, res) => {
   }
 });
 
-// ✅ GET NEARBY ANIMALS (FOR MAP VIEW) - MUST BE ABOVE /animals/:id
+/// ✅ GET NEARBY ANIMALS (FOR MAP VIEW) - NOW INCLUDES ALL CASES
 commonApp.get("/animals/nearby", async (req, res) => {
   try {
     const { lat, lng, radius, status } = req.query;
     
-    // Base query: only get animals that have coordinates
-    let query = { "location.coordinates.coordinates": { $exists: true, $ne: null } };
+    // ✅ Base query: Get ALL animals (not just those with coordinates)
+    let query = {};
     if (status && status !== "All") {
       query.status = status;
     }
 
     const animals = await AnimalModel.find(query).sort({ createdAt: -1 });
 
-    // If lat/lng provided, filter by distance using JS (avoids complex MongoDB index issues)
+    // If lat/lng provided, filter by distance (only for animals WITH coordinates)
     if (lat && lng) {
       const userLat = parseFloat(lat);
       const userLng = parseFloat(lng);
       const maxRadiusKm = parseFloat(radius) || 50;
 
       const filteredAnimals = animals.filter(animal => {
-        if (!animal.location?.coordinates?.coordinates) return false;
+        // If animal has no coordinates, still include it (it will show in count but not on map)
+        if (!animal.location?.coordinates?.coordinates) return true;
+        
         const [aniLng, aniLat] = animal.location.coordinates.coordinates;
         
         // Haversine formula for distance in km
@@ -150,7 +152,7 @@ commonApp.get("/animals/nearby", async (req, res) => {
       return res.status(200).json({ message: "Nearby animals fetched", payload: filteredAnimals });
     }
 
-    res.status(200).json({ message: "All animals with locations fetched", payload: animals });
+    res.status(200).json({ message: "All animals fetched", payload: animals });
   } catch (err) {
     console.error("Nearby animals error:", err);
     res.status(500).json({ message: "Error fetching nearby animals", error: err.message });
