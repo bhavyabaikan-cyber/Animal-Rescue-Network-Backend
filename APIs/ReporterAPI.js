@@ -143,3 +143,138 @@ reporterApp.get("/stats", verifyToken("REPORTER"), async (req, res, next) => {
     res.status(200).json({ message: "Stats fetched", payload: stats });
   } catch (err) { next(err); }
 });
+
+
+// ✅ PUT - Edit a reported animal (ONLY by the reporter who created it)
+reporterApp.put("/report/:id", verifyToken("REPORTER"), upload.single("image"), async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    
+    console.log("\n✏️ [EDIT REPORT] === Editing Report ===");
+    console.log("✏️ [EDIT REPORT] Animal ID:", id);
+    console.log("✏️ [EDIT REPORT] User ID:", userId);
+
+    if (!id.match(/^[0-9a-f]{24}$/i)) {
+      return res.status(400).json({ message: "Invalid animal ID format" });
+    }
+
+    // Find the animal
+    const animal = await getAnimals().findOne({ _id: new mongoose.Types.ObjectId(id) });
+    if (!animal) {
+      return res.status(404).json({ message: "Animal not found" });
+    }
+
+    // ✅ SECURITY: Only the original reporter can edit
+    if (animal.reportedBy.toString() !== userId) {
+      return res.status(403).json({ message: "You can only edit your own reports" });
+    }
+
+    // Build update object with only provided fields
+    const { name, species, breed, description, urgency, address, location, latitude, longitude, caseType } = req.body;
+    const updateData = {};
+
+    if (name !== undefined) updateData.name = name.trim() || "Unnamed";
+    if (species !== undefined) {
+      if (!species.trim()) return res.status(400).json({ message: "Species is required" });
+      updateData.species = species.trim();
+    }
+    if (breed !== undefined) updateData.breed = breed.trim();
+    if (description !== undefined) {
+      if (!description.trim()) return res.status(400).json({ message: "Description is required" });
+      updateData.description = description.trim();
+    }
+    if (urgency !== undefined) {
+      updateData.urgency = urgency === "true" || urgency === true || urgency === "on";
+    }
+    if (caseType !== undefined) updateData.caseType = caseType;
+    
+    // Handle address/location
+    const finalAddress = address || location;
+    if (finalAddress !== undefined) {
+      if (!finalAddress.trim()) return res.status(400).json({ message: "Address is required" });
+      updateData["location.address"] = finalAddress.trim();
+    }
+    
+    // Handle coordinates if provided
+    if (latitude && longitude) {
+      updateData["location.coordinates"] = {
+        type: "Point",
+        coordinates: [parseFloat(longitude), parseFloat(latitude)]
+      };
+    }
+
+    // Handle new image upload
+    if (req.file) {
+      const backendUrl = process.env.BACKEND_URL || "http://localhost:12000";
+      updateData.imageUrl = `${backendUrl}/uploads/${req.file.filename}`;
+    }
+
+    updateData.updatedAt = new Date();
+
+    // Update the animal
+    await getAnimals().updateOne(
+      { _id: new mongoose.Types.ObjectId(id) },
+      { $set: updateData }
+    );
+
+    // Fetch updated animal
+    const updatedAnimal = await getAnimals().findOne({ _id: new mongoose.Types.ObjectId(id) });
+
+    console.log("✅ [EDIT REPORT] Successfully updated\n");
+
+    res.status(200).json({ 
+      message: "Report updated successfully!", 
+      payload: updatedAnimal 
+    });
+  } catch (err) {
+    console.error("💥 [EDIT REPORT] Error:", err);
+    next(err);
+  }
+});
+
+// ✅ DELETE - Delete a reported animal (ONLY by the reporter who created it)
+reporterApp.delete("/report/:id", verifyToken("REPORTER"), async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    
+    console.log("\n🗑️ [DELETE REPORT] === Deleting Report ===");
+    console.log("🗑️ [DELETE REPORT] Animal ID:", id);
+    console.log("🗑️ [DELETE REPORT] User ID:", userId);
+
+    if (!id.match(/^[0-9a-f]{24}$/i)) {
+      return res.status(400).json({ message: "Invalid animal ID format" });
+    }
+
+    // Find the animal
+    const animal = await getAnimals().findOne({ _id: new mongoose.Types.ObjectId(id) });
+    if (!animal) {
+      return res.status(404).json({ message: "Animal not found" });
+    }
+
+    // ✅ SECURITY: Only the original reporter can delete
+    if (animal.reportedBy.toString() !== userId) {
+      return res.status(403).json({ message: "You can only delete your own reports" });
+    }
+
+    // ✅ Prevent deletion if case is already in progress
+    if (animal.status !== "Pending") {
+      return res.status(400).json({ 
+        message: "Cannot delete this report. The case is already being handled by a volunteer." 
+      });
+    }
+
+    // Delete the animal
+    await getAnimals().deleteOne({ _id: new mongoose.Types.ObjectId(id) });
+
+    console.log("✅ [DELETE REPORT] Successfully deleted\n");
+
+    res.status(200).json({ 
+      message: "Report deleted successfully!" 
+    });
+  } catch (err) {
+    console.error("💥 [DELETE REPORT] Error:", err);
+    next(err);
+  }
+});
