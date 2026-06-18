@@ -111,12 +111,12 @@ commonApp.get("/animals", async (req, res) => {
   }
 });
 
-/// ✅ GET NEARBY ANIMALS (FOR MAP VIEW) - NOW INCLUDES ALL CASES
+// ✅ GET NEARBY ANIMALS (FOR MAP VIEW) - MUST BE ABOVE /animals/:id
 commonApp.get("/animals/nearby", async (req, res) => {
   try {
     const { lat, lng, radius, status } = req.query;
     
-    // ✅ Base query: Get ALL animals (not just those with coordinates)
+    // Base query: Get ALL animals
     let query = {};
     if (status && status !== "All") {
       query.status = status;
@@ -124,19 +124,19 @@ commonApp.get("/animals/nearby", async (req, res) => {
 
     const animals = await AnimalModel.find(query).sort({ createdAt: -1 });
 
-    // If lat/lng provided, filter by distance (only for animals WITH coordinates)
+    // If lat/lng provided, filter by distance
     if (lat && lng) {
       const userLat = parseFloat(lat);
       const userLng = parseFloat(lng);
       const maxRadiusKm = parseFloat(radius) || 50;
 
       const filteredAnimals = animals.filter(animal => {
-        // If animal has no coordinates, still include it (it will show in count but not on map)
+        // Include animals without coordinates
         if (!animal.location?.coordinates?.coordinates) return true;
         
         const [aniLng, aniLat] = animal.location.coordinates.coordinates;
         
-        // Haversine formula for distance in km
+        // Haversine formula
         const R = 6371; 
         const dLat = (aniLat - userLat) * Math.PI / 180;
         const dLng = (aniLng - userLng) * Math.PI / 180;
