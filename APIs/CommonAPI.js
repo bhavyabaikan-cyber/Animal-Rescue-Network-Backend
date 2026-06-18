@@ -111,6 +111,53 @@ commonApp.get("/animals", async (req, res) => {
   }
 });
 
+// ✅ GET NEARBY ANIMALS (FOR MAP VIEW) - MUST BE ABOVE /animals/:id
+commonApp.get("/animals/nearby", async (req, res) => {
+  try {
+    const { lat, lng, radius, status } = req.query;
+    
+    // Base query: only get animals that have coordinates
+    let query = { "location.coordinates.coordinates": { $exists: true, $ne: null } };
+    if (status && status !== "All") {
+      query.status = status;
+    }
+
+    const animals = await AnimalModel.find(query).sort({ createdAt: -1 });
+
+    // If lat/lng provided, filter by distance using JS (avoids complex MongoDB index issues)
+    if (lat && lng) {
+      const userLat = parseFloat(lat);
+      const userLng = parseFloat(lng);
+      const maxRadiusKm = parseFloat(radius) || 50;
+
+      const filteredAnimals = animals.filter(animal => {
+        if (!animal.location?.coordinates?.coordinates) return false;
+        const [aniLng, aniLat] = animal.location.coordinates.coordinates;
+        
+        // Haversine formula for distance in km
+        const R = 6371; 
+        const dLat = (aniLat - userLat) * Math.PI / 180;
+        const dLng = (aniLng - userLng) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(userLat * Math.PI / 180) * Math.cos(aniLat * Math.PI / 180) * 
+                  Math.sin(dLng/2) * Math.sin(dLng/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const distance = R * c;
+        
+        return distance <= maxRadiusKm;
+      });
+      
+      return res.status(200).json({ message: "Nearby animals fetched", payload: filteredAnimals });
+    }
+
+    res.status(200).json({ message: "All animals with locations fetched", payload: animals });
+  } catch (err) {
+    console.error("Nearby animals error:", err);
+    res.status(500).json({ message: "Error fetching nearby animals", error: err.message });
+  }
+});
+
+
 // ✅ 3. GET SINGLE ANIMAL BY ID (SIMPLIFIED - ALLOW ALL LOGGED-IN USERS)
 commonApp.get("/animals/:id", verifyToken(), async (req, res, next) => {
   try {
