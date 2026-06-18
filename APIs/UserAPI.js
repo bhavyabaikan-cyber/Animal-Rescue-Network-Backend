@@ -160,3 +160,64 @@ userApp.get("/all", verifyToken(), async (req, res, next) => {
     next(err);
   }
 });
+
+// ✅ GET Dynamic Badges based on user activity
+userApp.get("/badges", verifyToken(), async (req, res, next) => {
+  try {
+    const userId = new mongoose.Types.ObjectId(req.user.id);
+    const user = await getUsers().findOne({ _id: userId });
+    const animals = mongoose.connection.db.collection("animals");
+    
+    const badges = [];
+
+    // 1. Common Badge (Everyone gets this)
+    badges.push({ id: 'joined', title: 'Community Member', description: 'Joined the Animal Rescue Network', icon: '🌟' });
+
+    // 2. Reporter Badges
+    if (user.role === 'REPORTER') {
+      const reported = await animals.find({ reportedBy: userId }).toArray();
+      if (reported.length >= 1) badges.push({ id: 'first_report', title: 'First Responder', description: 'Reported your first animal in need', icon: '📢' });
+      if (reported.length >= 5) badges.push({ id: 'watchful_eye', title: 'Watchful Eye', description: 'Reported 5 animals', icon: '👁️' });
+      
+      const rescued = reported.filter(a => a.status === 'Rescued' || a.status === 'Adopted');
+      if (rescued.length >= 1) badges.push({ id: 'lifesaver', title: 'Lifesaver', description: 'Reported an animal that was successfully rescued', icon: '🏆' });
+    }
+
+    // 3. Volunteer Badges
+    if (user.role === 'VOLUNTEER') {
+      const assigned = await animals.find({ assignedVolunteer: userId }).toArray();
+      if (assigned.length >= 1) badges.push({ id: 'first_rescue', title: 'Action Hero', description: 'Accepted your first rescue case', icon: '🦸' });
+      if (assigned.length >= 5) badges.push({ id: 'veteran', title: 'Veteran Rescuer', description: 'Handled 5 rescue cases', icon: '🎖️' });
+      
+      const adopted = assigned.filter(a => a.status === 'Adopted');
+      if (adopted.length >= 1) badges.push({ id: 'matchmaker', title: 'Matchmaker', description: 'Helped an animal find a forever home', icon: '🏡' });
+    }
+
+    // 4. Donor Badges
+    if (user.role === 'DONOR') {
+      const donatedCases = await animals.find({ "donations.donor": userId }).toArray();
+      let totalDonated = 0;
+      donatedCases.forEach(a => {
+        a.donations.filter(d => d.donor.toString() === userId.toString()).forEach(d => totalDonated += Number(d.amount) || 0);
+      });
+      
+      if (donatedCases.length >= 1) badges.push({ id: 'first_donation', title: 'Generous Heart', description: 'Made your first donation', icon: '💖' });
+      if (totalDonated >= 1000) badges.push({ id: 'champion', title: 'Champion Supporter', description: 'Donated over ₹1000', icon: '👑' });
+      if (totalDonated >= 5000) badges.push({ id: 'philanthropist', title: 'Philanthropist', description: 'Donated over ₹5000', icon: '💎' });
+    }
+
+    // 5. Adopter Badges
+    if (user.role === 'ADOPTER') {
+      const adopted = await animals.find({ 'adoption.applicant': userId, status: 'Adopted' }).toArray();
+      const applied = await animals.find({ 'adoption.applicant': userId }).toArray();
+      
+      if (applied.length >= 1 && adopted.length === 0) badges.push({ id: 'hopeful', title: 'Hopeful Adopter', description: 'Submitted an adoption application', icon: '📝' });
+      if (adopted.length >= 1) badges.push({ id: 'forever_home', title: 'Forever Home', description: 'Successfully adopted an animal', icon: '🐾' });
+    }
+
+    res.status(200).json({ message: "Badges fetched", payload: badges });
+  } catch (err) {
+    console.error("Badges error:", err);
+    next(err);
+  }
+});
