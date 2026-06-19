@@ -37,12 +37,23 @@ volunteerApp.get("/my-cases", verifyToken("VOLUNTEER"), async (req, res, next) =
     const myCases = await getAnimals()
       .find({ 
         assignedVolunteer: new mongoose.Types.ObjectId(req.user.id),
-        status: { $in: ["In Transit", "Rescued", "Adoption Pending"] }
+        status: { 
+          $in: [
+            "In Transit", 
+            "Rescued", 
+            "Adoption Pending",
+            "Found",
+            "Owner Contacted",
+            "Met Owner",
+            "Still Missing"
+          ] 
+        }
       })
       .toArray();
     res.status(200).json({ message: "My cases fetched", payload: myCases });
   } catch (err) { next(err); }
 });
+
 
 // ✅ GET my completed cases
 volunteerApp.get("/completed-cases", verifyToken("VOLUNTEER"), async (req, res, next) => {
