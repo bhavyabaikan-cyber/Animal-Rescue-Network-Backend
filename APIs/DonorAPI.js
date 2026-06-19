@@ -69,7 +69,14 @@ if (session.payment_status === "paid") {
     orderId: session.id
   });
   animal.totalPledged = (animal.totalPledged || 0) + amount;
-  await animal.save();
+await animal.save();
+
+// ✅ AWARD POINTS TO DONOR (Stripe)
+const usersCol = mongoose.connection.db.collection("users");
+await usersCol.updateOne(
+  { _id: new mongoose.Types.ObjectId(req.user.id) },
+  { $inc: { points: Math.floor(amount) } } 
+);
 
   // ✅ Send Donation Receipt Email
   const donor = await UserModel.findById(req.user.id);
@@ -174,8 +181,15 @@ await animals.updateOne(
   { _id: new mongoose.Types.ObjectId(animalId) },
   {
     $push: { donations: donation },
-    $inc: { totalPledged: parseFloat(amount) }
+    $inc: { totalPledged: parseFloat(amount) } // ✅ FIXED TYPO
   }
+);
+
+// ✅ AWARD POINTS TO DONOR (1 point per Rs. 1 donated)
+const usersCol = mongoose.connection.db.collection("users");
+await usersCol.updateOne(
+  { _id: new mongoose.Types.ObjectId(donorId) },
+  { $inc: { points: Math.floor(amount) } } 
 );
 
 // Notify the reporter and volunteer
